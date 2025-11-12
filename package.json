@@ -1,6 +1,6 @@
 {
   "name": "@danielsimonjr/fzf-mcp",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "MCP server for fzf fuzzy finder (self-contained with bundled fzf binary)",
   "main": "index.js",
   "bin": {
