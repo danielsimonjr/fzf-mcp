@@ -80,8 +80,16 @@ function executeFzf(args, input = "") {
  */
 async function getFileList(directory = ".", maxDepth = 10) {
   try {
-    // Use dir /s /b on Windows to get recursive file listing
-    const { stdout } = await execAsync(`dir "${directory}" /s /b 2>nul || find "${directory}" -type f 2>/dev/null || ls -R "${directory}" 2>/dev/null`);
+    let command;
+    if (process.platform === 'win32') {
+      // Windows: use cmd.exe to run dir command
+      command = `cmd /c "dir /s /b /a-d "${directory}" 2>nul"`;
+    } else {
+      // Unix: use find command
+      command = `find "${directory}" -type f 2>/dev/null`;
+    }
+
+    const { stdout } = await execAsync(command);
     return stdout;
   } catch (error) {
     // If commands fail, return empty string
