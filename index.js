@@ -60,8 +60,7 @@ async function getFileList(directory, maxDepth = 10) {
   }
   
   await walk(directory);
-  return files.join('
-');
+  return files.join('\n');
 }
 
 /**
