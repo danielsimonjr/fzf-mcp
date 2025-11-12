@@ -34,6 +34,37 @@ function getFzfPath() {
 const FZF_PATH = getFzfPath();
 
 /**
+ * Recursively get all files in a directory using Node.js fs
+ */
+async function getFileList(directory, maxDepth = 10) {
+  const files = [];
+  
+  async function walk(dir, depth = 0) {
+    if (depth > maxDepth) return;
+    
+    try {
+      const entries = await fs.promises.readdir(dir, { withFileTypes: true });
+      
+      for (const entry of entries) {
+        const fullPath = path.join(dir, entry.name);
+        
+        if (entry.isDirectory()) {
+          await walk(fullPath, depth + 1);
+        } else if (entry.isFile()) {
+          files.push(fullPath);
+        }
+      }
+    } catch (error) {
+      // Skip directories we can't read
+    }
+  }
+  
+  await walk(directory);
+  return files.join('
+');
+}
+
+/**
  * Execute fzf with the given arguments and input
  */
 function executeFzf(args, input = "") {
@@ -78,24 +109,7 @@ function executeFzf(args, input = "") {
 /**
  * Get list of files from a directory (recursively)
  */
-async function getFileList(directory = ".", maxDepth = 10) {
-  try {
-    let command;
-    if (process.platform === 'win32') {
-      // Windows: use cmd.exe to run dir command
-      command = `cmd /c "dir /s /b /a-d "${directory}" 2>nul"`;
-    } else {
-      // Unix: use find command
-      command = `find "${directory}" -type f 2>/dev/null`;
-    }
 
-    const { stdout } = await execAsync(command);
-    return stdout;
-  } catch (error) {
-    // If commands fail, return empty string
-    return "";
-  }
-}
 
 /**
  * Create and configure the MCP server
