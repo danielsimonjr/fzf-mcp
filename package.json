@@ -1,12 +1,20 @@
 {
   "name": "@danielsimonjr/fzf-mcp",
-  "version": "1.0.0",
-  "description": "MCP server for fzf fuzzy finder",
+  "version": "1.1.0",
+  "description": "MCP server for fzf fuzzy finder (self-contained with bundled fzf binary)",
   "main": "index.js",
   "bin": {
     "fzf-mcp": "./index.js"
   },
+  "files": [
+    "index.js",
+    "install-fzf.js",
+    "bin/",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
+    "postinstall": "node install-fzf.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

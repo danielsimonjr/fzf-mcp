@@ -9,10 +9,29 @@ const {
 const { spawn } = require("child_process");
 const { promisify } = require("util");
 const { exec } = require("child_process");
+const path = require("path");
+const fs = require("fs");
 const execAsync = promisify(exec);
 
-// Path to fzf.exe - can be overridden via environment variable
-const FZF_PATH = process.env.FZF_PATH || "fzf";
+// Determine fzf path - prioritize bundled binary, then environment variable, then system PATH
+function getFzfPath() {
+  // 1. Check environment variable
+  if (process.env.FZF_PATH) {
+    return process.env.FZF_PATH;
+  }
+
+  // 2. Check bundled binary
+  const binaryName = process.platform === 'win32' ? 'fzf.exe' : 'fzf';
+  const bundledPath = path.join(__dirname, 'bin', binaryName);
+  if (fs.existsSync(bundledPath)) {
+    return bundledPath;
+  }
+
+  // 3. Fall back to system PATH
+  return 'fzf';
+}
+
+const FZF_PATH = getFzfPath();
 
 /**
  * Execute fzf with the given arguments and input

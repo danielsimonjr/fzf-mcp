@@ -8,42 +8,18 @@ Model Context Protocol (MCP) server for [fzf](https://github.com/junegunn/fzf), 
 
 ## Features
 
+n🎁 **Self-Contained**: fzf binary automatically downloaded and bundled during installation - **no manual setup required!**
+
 - **Fuzzy File Search**: Search for files recursively using fzf's fuzzy matching
 - **List Filtering**: Filter any list of items with fuzzy matching
 - **Content Search**: Search within file contents using fuzzy matching
 - **Fast & Efficient**: Leverages fzf's blazing-fast fuzzy finder
+- **Auto-Install**: fzf binary downloads automatically on `npm install`
 - **Cross-Platform**: Works on Windows, macOS, and Linux
 
 ## Prerequisites
 
-**fzf must be installed on your system:**
-
-### Windows (via winget)
-```bash
-winget install fzf
-```
-
-### Windows (via Scoop)
-```bash
-scoop install fzf
-```
-
-### macOS (via Homebrew)
-```bash
-brew install fzf
-```
-
-### Linux (via package manager)
-```bash
-# Ubuntu/Debian
-sudo apt install fzf
-
-# Arch Linux
-sudo pacman -S fzf
-
-# Fedora
-sudo dnf install fzf
-```
+**None!** fzf binary is automatically downloaded and bundled during `npm install`. The package is completely self-contained.
 
 ## Installation
 
