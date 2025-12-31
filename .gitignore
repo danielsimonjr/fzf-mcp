@@ -31,3 +31,7 @@ Thumbs.db
 # Temporary files
 *.tmp
 .tmp/
+
+# Claude Code settings (local only)
+.claude/
+.mcp.json
