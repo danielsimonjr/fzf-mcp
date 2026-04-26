@@ -412,6 +412,12 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
  * Start the server
  */
 async function main() {
+  // Exit cleanly when our stdio pipe closes (e.g., Claude Code's
+  // /reload-plugins). Without this, lingering subprocess refs from spawned
+  // fzf invocations can keep the event loop alive after the transport closes.
+  process.stdin.on("end", () => process.exit(0));
+  process.stdin.on("close", () => process.exit(0));
+
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("fzf MCP server running on stdio");
