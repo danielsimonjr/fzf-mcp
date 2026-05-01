@@ -7,11 +7,8 @@ const {
   ListToolsRequestSchema,
 } = require("@modelcontextprotocol/sdk/types.js");
 const { spawn } = require("child_process");
-const { promisify } = require("util");
-const { exec } = require("child_process");
 const path = require("path");
 const fs = require("fs");
-const execAsync = promisify(exec);
 
 // Determine fzf path - prioritize bundled binary, then environment variable, then system PATH
 function getFzfPath() {
@@ -106,9 +103,47 @@ function executeFzf(args, input = "") {
 }
 
 /**
- * Get list of files from a directory (recursively)
+ * Run an external search command (findstr/grep) safely with argv-based spawn.
+ *
+ * IMPORTANT: This intentionally uses `spawn` with the default `shell: false`
+ * and passes user-controlled values (query, directory, filePattern) as
+ * separate argv items. Do NOT switch this back to `exec`/string-interpolation
+ * — that introduced a command-injection vulnerability where a query like
+ *   `"; calc.exe & echo "`  (Windows) or  `"; rm -rf ~ #`  (Unix)
+ * would escape the quoting and execute attacker-controlled commands.
+ *
+ * Returns a Promise resolving to { stdout, code } on close. stderr is
+ * intentionally discarded. Non-zero exit codes (including findstr/grep's
+ * "no match" code 1) resolve normally with whatever stdout was captured.
  */
+function runSearchCommand(cmd, args) {
+  return new Promise((resolve, reject) => {
+    let proc;
+    try {
+      proc = spawn(cmd, args, { shell: false });
+    } catch (err) {
+      reject(err);
+      return;
+    }
 
+    let stdout = "";
+
+    proc.stdout.on("data", (data) => {
+      stdout += data.toString();
+    });
+
+    // Drain stderr so the child doesn't block on a full pipe; ignore content.
+    proc.stderr.on("data", () => {});
+
+    proc.on("close", (code) => {
+      resolve({ stdout, code });
+    });
+
+    proc.on("error", (err) => {
+      reject(err);
+    });
+  });
+}
 
 /**
  * Create and configure the MCP server
@@ -337,19 +372,34 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         caseSensitive = false,
       } = args;
 
-      // Use grep/findstr to search file contents, then pipe to fzf
-      let grepCommand;
+      // SECURITY: Use spawn with argv (shell: false) so query/directory/
+      // filePattern can never be parsed as shell metacharacters. A previous
+      // implementation interpolated these into a shell string, which allowed
+      // command injection (e.g. query `"; calc.exe & echo "` on Windows).
+      let searchCmd;
+      let searchArgs;
       if (process.platform === 'win32') {
-        // Windows: use findstr
-        grepCommand = `findstr /s /n /p "${query}" "${directory}\\${filePattern}" 2>nul`;
+        // Windows: findstr. The path argument is a single token combining
+        // directory and pattern (e.g. "C:\\proj\\*.js"); /s recurses.
+        searchCmd = 'findstr';
+        searchArgs = [
+          '/s',
+          '/n',
+          '/p',
+          query,
+          path.join(directory, filePattern),
+        ];
       } else {
-        // Unix: use grep
-        const caseFlag = caseSensitive ? '' : '-i';
-        grepCommand = `grep -r ${caseFlag} -n "${query}" "${directory}" 2>/dev/null`;
+        // Unix: grep -r. Pass case flag only when needed so we don't push
+        // an empty string into argv.
+        searchCmd = 'grep';
+        searchArgs = ['-r', '-n'];
+        if (!caseSensitive) searchArgs.push('-i');
+        searchArgs.push(query, directory);
       }
 
       try {
-        const { stdout } = await execAsync(grepCommand);
+        const { stdout } = await runSearchCommand(searchCmd, searchArgs);
 
         // If we have results, filter them with fzf
         if (stdout) {
