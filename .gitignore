@@ -35,3 +35,10 @@ Thumbs.db
 # Claude Code settings (local only)
 .claude/
 .mcp.json
+# Added by post-migration audit (2026-05-01)
+dist/
+build/
+.venv/
+venv/
+__pycache__/
+.env
