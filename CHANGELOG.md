@@ -4,6 +4,9 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Documentation
+- Add CycloneDX SBOM (sbom.json).
+
 ### Tests
 - Added `tests/test_content_search_injection.js` (10 tests, Node built-in test runner — no new dependencies) — regression coverage for the v1.1.2 command-injection fix in `fuzzy_search_content`. Asserts that for a 14-payload battery (Windows quote-breakers, POSIX chaining, subshell expansion, pipe-to-attacker, newline injection, glob, null-byte) the user's query/directory/filePattern flow into `child_process.spawn` as their own argv elements with `shell: false` — never concatenated into a shell string. Also covers 7 legitimate-input cases (filenames with spaces, unicode, dash-prefixed queries that look like flags). `npm test` now runs the suite.
 
