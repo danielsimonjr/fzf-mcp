@@ -116,6 +116,36 @@ function executeFzf(args, input = "") {
  * intentionally discarded. Non-zero exit codes (including findstr/grep's
  * "no match" code 1) resolve normally with whatever stdout was captured.
  */
+/**
+ * Build the (cmd, argv) pair for a content search. Pure function — extracted
+ * so regression tests can assert that user-supplied query/directory/
+ * filePattern values are passed as separate argv items and never spliced
+ * into a shell string. See the security note on `runSearchCommand`.
+ *
+ * @param {{query: string, directory?: string, filePattern?: string, caseSensitive?: boolean}} opts
+ * @param {string} platform - typically `process.platform`
+ * @returns {{cmd: string, args: string[]}}
+ */
+function buildContentSearchCommand(opts, platform) {
+  const {
+    query,
+    directory = ".",
+    filePattern = "*",
+    caseSensitive = false,
+  } = opts;
+
+  if (platform === "win32") {
+    return {
+      cmd: "findstr",
+      args: ["/s", "/n", "/p", query, path.join(directory, filePattern)],
+    };
+  }
+  const args = ["-r", "-n"];
+  if (!caseSensitive) args.push("-i");
+  args.push(query, directory);
+  return { cmd: "grep", args };
+}
+
 function runSearchCommand(cmd, args) {
   return new Promise((resolve, reject) => {
     let proc;
@@ -376,27 +406,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       // filePattern can never be parsed as shell metacharacters. A previous
       // implementation interpolated these into a shell string, which allowed
       // command injection (e.g. query `"; calc.exe & echo "` on Windows).
-      let searchCmd;
-      let searchArgs;
-      if (process.platform === 'win32') {
-        // Windows: findstr. The path argument is a single token combining
-        // directory and pattern (e.g. "C:\\proj\\*.js"); /s recurses.
-        searchCmd = 'findstr';
-        searchArgs = [
-          '/s',
-          '/n',
-          '/p',
-          query,
-          path.join(directory, filePattern),
-        ];
-      } else {
-        // Unix: grep -r. Pass case flag only when needed so we don't push
-        // an empty string into argv.
-        searchCmd = 'grep';
-        searchArgs = ['-r', '-n'];
-        if (!caseSensitive) searchArgs.push('-i');
-        searchArgs.push(query, directory);
-      }
+      const { cmd: searchCmd, args: searchArgs } = buildContentSearchCommand(
+        { query, directory, filePattern, caseSensitive },
+        process.platform
+      );
 
       try {
         const { stdout } = await runSearchCommand(searchCmd, searchArgs);
@@ -473,7 +486,20 @@ async function main() {
   console.error("fzf MCP server running on stdio");
 }
 
-main().catch((error) => {
-  console.error("Fatal error:", error);
-  process.exit(1);
-});
+// Only auto-start when invoked as the entry point. Tests require this file
+// to access internal helpers (runSearchCommand, the CallTool handler) without
+// spawning a stdio server.
+if (require.main === module) {
+  main().catch((error) => {
+    console.error("Fatal error:", error);
+    process.exit(1);
+  });
+}
+
+// Test-only export surface. Keep this minimal — production callers use the
+// MCP stdio protocol, not these direct refs.
+module.exports = {
+  server,
+  runSearchCommand,
+  buildContentSearchCommand,
+};
