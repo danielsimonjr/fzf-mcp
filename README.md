@@ -291,6 +291,10 @@ MIT License - see [LICENSE](LICENSE) file for details.
 - **fzf Project:** https://github.com/junegunn/fzf
 - **MCP Documentation:** https://modelcontextprotocol.io
 
+## Recent updates
+
+See [CHANGELOG.md](CHANGELOG.md) for recent changes — shell-injection regression coverage added.
+
 ---
 
 **Made with ❤️ for the MCP community**
