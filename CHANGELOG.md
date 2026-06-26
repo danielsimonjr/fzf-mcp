@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.1.4] - 2026-06-26
+
+### Security
+- **Harden archive extraction in `install-fzf.js` against shell injection** (defense-in-depth, CWE-78). `extractArchive` built `powershell -Command "..."` and `tar ... "..."` by interpolating the archive/destination paths into a shell string passed to `execSync`. The paths are internal (derived from `__dirname` + a constant filename), so this was not remotely exploitable, but an install directory whose path contained `$(...)`/backticks (Unix) or a PowerShell subexpression could break extraction or execute code, and paths with spaces were fragile. Both branches now use `execFileSync` with no shell: the Windows branch passes paths via environment variables read with `$Env:` + `-LiteralPath` (zero interpolation, `-NoProfile`/`-NonInteractive`), and the Unix branch passes paths as argv elements to `tar`.
+
+### Tests
+- Added `tests/test_extract_archive.js` — real archive round-trip on the current platform (zip via PowerShell on Windows, tar.gz on Unix) extracted into a destination directory containing a space, asserting the file and its contents survive. `install-fzf.js` now exports `extractArchive`/`getDownloadInfo` and only auto-runs `install()` under `require.main === module`, so it can be required without side effects.
+
+### Fixed
+- Synced the MCP server `version` reported by `index.js` (was `1.0.0`) to the package version.
+
 ## [1.1.3] - 2026-05-01
 
 ### Documentation

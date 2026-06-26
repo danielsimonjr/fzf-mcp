@@ -4,7 +4,7 @@ const https = require('https');
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
-const { execSync } = require('child_process');
+const { execFileSync } = require('child_process');
 const { promisify } = require('util');
 const stream = require('stream');
 const pipeline = promisify(stream.pipeline);
@@ -109,12 +109,20 @@ function extractArchive(archivePath, destDir, isZip) {
 
   try {
     if (isZip) {
-      // Windows: use PowerShell to extract
-      const psCommand = `Expand-Archive -Path "${archivePath}" -DestinationPath "${destDir}" -Force`;
-      execSync(`powershell -Command "${psCommand}"`, { stdio: 'inherit' });
+      // Windows: PowerShell Expand-Archive. Paths are passed via environment
+      // variables and read with $Env: + -LiteralPath, so nothing is interpolated
+      // into the command string — a path containing spaces, $(...) or backticks
+      // cannot break out or execute. execFileSync runs powershell.exe directly
+      // (no shell), and -NoProfile/-NonInteractive avoid profile side effects.
+      execFileSync(
+        'powershell',
+        ['-NoProfile', '-NonInteractive', '-Command',
+          'Expand-Archive -LiteralPath $Env:FZF_ARCHIVE -DestinationPath $Env:FZF_DEST -Force'],
+        { stdio: 'inherit', env: { ...process.env, FZF_ARCHIVE: archivePath, FZF_DEST: destDir } },
+      );
     } else {
-      // Unix: use tar
-      execSync(`tar -xzf "${archivePath}" -C "${destDir}"`, { stdio: 'inherit' });
+      // Unix: tar with argv array (no shell) — paths are literal arguments.
+      execFileSync('tar', ['-xzf', archivePath, '-C', destDir], { stdio: 'inherit' });
     }
     console.log('Extraction complete');
   } catch (error) {
@@ -191,5 +199,10 @@ async function install() {
   }
 }
 
-// Run installation
-install();
+// Run installation only when executed directly, so the module can be required
+// (e.g. by tests) without triggering a download/extract.
+if (require.main === module) {
+  install();
+}
+
+module.exports = { extractArchive, getDownloadInfo };
