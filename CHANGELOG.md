@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
-## [1.2.0]
+## [1.2.0] - 2026-07-06
 
 ### Added
 - **Companion skill** — `fzf` (`fzf-mcp:fzf`, `/fzf`), a judgment layer over
