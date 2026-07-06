@@ -166,6 +166,15 @@ Search within file contents using fuzzy matching.
 }
 ```
 
+## Companion skill
+
+This plugin ships a companion skill, `fzf` (`fzf-mcp:fzf`, slash trigger
+`/fzf`), at `skills/fzf/SKILL.md`. It's a judgment layer over the 3 tools
+above — no new tools of its own — that steers you toward `fuzzy_filter` for
+a list already in hand, `fuzzy_search_files` / `fuzzy_search_content` for
+filesystem walks, and flags when an indexed lookup (`everything-mcp`) would
+be faster than fzf's live directory walk.
+
 ## Usage Examples
 
 ### Example 1: Find Configuration Files

@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.2.0]
+
+### Added
+- **Companion skill** — `fzf` (`fzf-mcp:fzf`, `/fzf`), a judgment layer over
+  the 3 tools that steers toward `fuzzy_filter` for a list already in hand,
+  `fuzzy_search_files` / `fuzzy_search_content` for filesystem walks, and
+  flags when an indexed lookup (`everything-mcp`) would be faster than fzf's
+  live directory walk. Ships at `skills/fzf/SKILL.md`.
+
 ## [1.1.4] - 2026-06-26
 
 ### Security
