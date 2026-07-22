@@ -33882,18 +33882,40 @@ var {
 var { spawn } = require("child_process");
 var path = require("path");
 var fs = require("fs");
-function getFzfPath() {
-  if (process.env.FZF_PATH) {
-    return process.env.FZF_PATH;
+function resolveFzfPath() {
+  const configured = process.env.FZF_PATH;
+  if (configured) {
+    if (!path.isAbsolute(configured)) {
+      throw new Error(`FZF_PATH must be an absolute path, got: ${configured}`);
+    }
+    return configured;
   }
   const binaryName = process.platform === "win32" ? "fzf.exe" : "fzf";
-  const bundledPath = path.join(__dirname, "bin", binaryName);
-  if (fs.existsSync(bundledPath)) {
-    return bundledPath;
+  const bundled = path.join(__dirname, "bin", binaryName);
+  if (fs.existsSync(bundled)) return bundled;
+  const candidates = [];
+  if (process.platform === "win32") {
+    const localAppData = process.env.LOCALAPPDATA;
+    if (localAppData) {
+      candidates.push(path.join(localAppData, "Microsoft", "WinGet", "Links", "fzf.exe"));
+      candidates.push(path.join(localAppData, "Microsoft", "WinGet", "Packages", "junegunn.fzf_Microsoft.Winget.Source_8wekyb3d8bbwe", "fzf.exe"));
+    }
+    if (process.env.USERPROFILE) {
+      candidates.push(path.join(process.env.USERPROFILE, "scoop", "apps", "fzf", "current", "fzf.exe"));
+    }
+    if (process.env.ProgramFiles) {
+      candidates.push(path.join(process.env.ProgramFiles, "fzf", "fzf.exe"));
+    }
+  } else {
+    candidates.push("/usr/local/bin/fzf", "/usr/bin/fzf", "/opt/homebrew/bin/fzf");
+    if (process.env.HOME) candidates.push(path.join(process.env.HOME, ".fzf", "bin", "fzf"));
   }
-  return "fzf";
+  const found = candidates.find((p) => {
+    try { return fs.existsSync(p); } catch { return false; }
+  });
+  if (found) return found;
+  throw new Error("fzf binary not found. Set the FZF_PATH environment variable to the absolute path of the fzf executable (see .mcp.json), or install fzf.");
 }
-var FZF_PATH = getFzfPath();
 async function getFileList(directory, maxDepth = 10) {
   const files = [];
   async function walk(dir, depth = 0) {
@@ -33916,7 +33938,7 @@ async function getFileList(directory, maxDepth = 10) {
 }
 function executeFzf(args, input = "") {
   return new Promise((resolve, reject) => {
-    const process2 = spawn(FZF_PATH, args);
+    const process2 = spawn(resolveFzfPath(), args);
     let stdout = "";
     let stderr = "";
     if (input) {
@@ -34243,5 +34265,6 @@ if (require.main === module) {
 module.exports = {
   server,
   runSearchCommand,
-  buildContentSearchCommand
+  buildContentSearchCommand,
+  resolveFzfPath
 };

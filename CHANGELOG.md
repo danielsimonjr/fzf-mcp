@@ -11,6 +11,28 @@ All notable changes to this project will be documented in this file.
   tested the OS the server actually ships on. The `build` job now runs a
   `[ubuntu-latest, windows-latest]` matrix.
 
+### Security
+
+- **Resolve the `fzf` binary to an absolute path; never spawn a bare name**
+  (CWE-426/427, executable search-path hijacking / binary planting).
+  `getFzfPath()` fell back to `return 'fzf'` and returned `FZF_PATH` verbatim; on
+  Windows `spawn("fzf", …)` makes `CreateProcess` search the current working
+  directory first, so an `fzf.exe` planted in the CWD could be executed. Renamed
+  to `resolveFzfPath()`: rejects a non-absolute `FZF_PATH` (throws), keeps the
+  bundled-binary check, probes known absolute install locations (winget
+  Links/Packages, scoop, Program Files on Windows; `/usr/*` and `~/.fzf` on Unix),
+  and throws a clear error instead of a bare name. Resolution is now lazy (at
+  spawn time) so importing the module never throws when fzf is absent. Mirrored in
+  `bundle/index.cjs`.
+
+### Tests
+
+- Added `tests/test_fzf_path_resolution.js` — pins the invariant that
+  `resolveFzfPath()` rejects a relative `FZF_PATH` (`fzf`, `./fzf`, `bin/fzf.exe`,
+  …), honors an absolute one, and never returns a bare/relative name (absolute
+  path or throw). Runs against both `index.js` and `bundle/index.cjs` to guard
+  against source/bundle parity drift.
+
 ## [1.2.0] - 2026-07-06
 
 ### Added
