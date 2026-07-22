@@ -6,7 +6,9 @@
       "args": [
         "${CLAUDE_PLUGIN_ROOT}/bundle/index.cjs"
       ],
-      "env": {}
+      "env": {
+        "FZF_PATH": "C:\\Program Files\\fzf\\fzf.exe"
+      }
     }
   }
 }
