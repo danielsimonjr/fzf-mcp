@@ -33976,8 +33976,9 @@ function buildContentSearchCommand(opts, platform) {
     caseSensitive = false
   } = opts;
   if (platform === "win32") {
+    const findstr = path.join(process.env.SystemRoot || "C:\\Windows", "System32", "findstr.exe");
     return {
-      cmd: "findstr",
+      cmd: findstr,
       args: ["/s", "/n", "/p", query, path.join(directory, filePattern)]
     };
   }

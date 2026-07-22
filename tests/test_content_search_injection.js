@@ -150,7 +150,13 @@ test("buildContentSearchCommand: win32 passes query as its own argv element", ()
       { query: payload, directory: "C:\\proj", filePattern: "*.js" },
       "win32"
     );
-    assert.equal(cmd, "findstr");
+    // findstr must resolve to an ABSOLUTE path so CreateProcess can't run a
+    // findstr.exe planted in the CWD (bare-name spawn searches the CWD first).
+    assert.ok(
+      path.isAbsolute(cmd),
+      `win32 findstr must be an absolute path (CWD planting), got ${cmd}`
+    );
+    assert.match(cmd, /[\\/]findstr\.exe$/i, `must invoke findstr.exe, got ${cmd}`);
     assert.ok(
       args.includes(payload),
       `payload ${JSON.stringify(payload)} not found as argv element in ${JSON.stringify(args)}`
@@ -183,7 +189,9 @@ test("buildContentSearchCommand: legitimate inputs still pass through", () => {
         { query: q, directory: ".", filePattern: "*" },
         platform
       );
-      assert.ok(cmd === "grep" || cmd === "findstr");
+      // linux uses bare "grep"; win32 resolves findstr to an absolute path.
+      const okCmd = cmd === "grep" || /[\\/]findstr\.exe$/i.test(cmd);
+      assert.ok(okCmd, `unexpected search cmd on ${platform}: ${cmd}`);
       assert.ok(
         args.includes(q),
         `query ${JSON.stringify(q)} not preserved on ${platform}`

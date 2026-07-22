@@ -33,6 +33,13 @@ All notable changes to this project will be documented in this file.
   `.zip` natively, tolerates spaces, no shell, and — being absolute — not subject to
   CWD binary-planting) and creates the destination directory first.
 
+- **Resolve `findstr` to an absolute path in content search** (same binary-planting
+  class, defense-in-depth). `buildContentSearchCommand` returned a bare
+  `cmd: "findstr"`; even with `spawn(shell:false)`, Windows `CreateProcess` searches
+  the CWD first, so a planted `findstr.exe` could run. It now resolves to
+  `%SystemRoot%\System32\findstr.exe`. Unix `grep` is left as-is (`execvp` does not
+  search the CWD). Mirrored in `bundle/index.cjs`.
+
 ### Tests
 
 - Added `tests/test_fzf_path_resolution.js` — pins the invariant that

@@ -166,8 +166,11 @@ function buildContentSearchCommand(opts, platform) {
   } = opts;
 
   if (platform === "win32") {
+    // Absolute path to findstr so CreateProcess can't run a findstr.exe planted
+    // in the CWD (a bare command name is resolved against the CWD first).
+    const findstr = path.join(process.env.SystemRoot || "C:\\Windows", "System32", "findstr.exe");
     return {
-      cmd: "findstr",
+      cmd: findstr,
       args: ["/s", "/n", "/p", query, path.join(directory, filePattern)],
     };
   }
