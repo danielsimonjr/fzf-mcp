@@ -31,17 +31,19 @@ No build step — the two are kept in sync by hand. Latest tag: 1.2.0.
   `runSearchCommand` use `spawn(cmd, args, {shell:false})` with argv arrays. Pinned by
   `tests/test_content_search_injection.js`. Do not revert to `exec`.
 - **fzf binary path: FIXED** (see above) — absolute-only.
-- **Open:** `findstr`/`grep` are still spawned by bare name (same CWD-planting class,
-  lower severity, system utilities). Tracked in `TODO.md`. A reviewer independently
-  flagged this too.
+- **`findstr` path: FIXED** (`fc48e5c`) — content search resolves `findstr` to
+  `%SystemRoot%\System32\findstr.exe`; Unix `grep` left bare (`execvp` ignores the CWD).
+- **Dependabot #29: FIXED** (`cd0129b`) — npm `override` forces `@hono/node-server`
+  to `>=2.0.5` (→ 2.0.11); it's transitive via the SDK and unused (stdio-only), but the
+  alert is cleared.
 
 ## Runtime gotcha (maintainer's machine)
 
 The MCP that actually runs is a **separate copy** at
-`%USERPROFILE%\servers\src\fzf-mcp\index.js` (per `.claude.json`), currently the OLD
-pre-fix version (~429 lines) — vulnerable on both the fzf-path and (older) injection
-fronts. Redeploy the repo `index.js` into `servers\src` and restart Claude Code to make
-the running server match `main`. See `TODO.md`.
+`%USERPROFILE%\servers\src\fzf-mcp\index.js` (per `.claude.json`). **Re-synced
+2026-07-22** to match `main` (all fixes) — but the running process still holds the OLD
+module in memory, so **restart Claude Code** to activate it. Re-sync again after any
+future `index.js` change. See `TODO.md`.
 
 ## Environment facts
 
