@@ -40,6 +40,13 @@ All notable changes to this project will be documented in this file.
   `%SystemRoot%\System32\findstr.exe`. Unix `grep` is left as-is (`execvp` does not
   search the CWD). Mirrored in `bundle/index.cjs`.
 
+- **Force `@hono/node-server` >= 2.0.5 via an npm `override`** (Dependabot #29 —
+  path traversal in `serve-static` on Windows via an encoded backslash `%5C`). It
+  is a transitive dependency of `@modelcontextprotocol/sdk` (`^1.19.9`, which
+  capped it below the patch). This server uses only the stdio transport, so
+  `serve-static` is never reached, but the override raises it to 2.0.11 to clear
+  the alert.
+
 ### Tests
 
 - Added `tests/test_fzf_path_resolution.js` — pins the invariant that
