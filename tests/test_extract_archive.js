@@ -30,13 +30,10 @@ test("extractArchive extracts an archive into a destination path containing a sp
     let archivePath;
     if (isWin) {
       archivePath = path.join(base, "a.zip");
-      // Build the fixture zip with PowerShell (separate from the code under test).
-      execFileSync(
-        "powershell",
-        ["-NoProfile", "-NonInteractive", "-Command",
-          "Compress-Archive -LiteralPath $Env:SRC -DestinationPath $Env:DST -Force"],
-        { stdio: "inherit", env: { ...process.env, SRC: path.join(srcDir, "hello.txt"), DST: archivePath } },
-      );
+      // Build the fixture zip with bsdtar (System32\tar.exe), separate from the
+      // code under test. `-a` selects the format from the .zip extension.
+      const tarExe = path.join(process.env.SystemRoot || "C:\\Windows", "System32", "tar.exe");
+      execFileSync(tarExe, ["-a", "-c", "-f", archivePath, "-C", srcDir, "hello.txt"], { stdio: "inherit" });
       extractArchive(archivePath, outDir, true);
     } else {
       archivePath = path.join(base, "a.tar.gz");

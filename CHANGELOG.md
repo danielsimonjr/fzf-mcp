@@ -25,6 +25,14 @@ All notable changes to this project will be documented in this file.
   spawn time) so importing the module never throws when fzf is absent. Mirrored in
   `bundle/index.cjs`.
 
+- **Extract archives with bsdtar (`%SystemRoot%\System32\tar.exe`) instead of
+  PowerShell `Expand-Archive`.** `extractArchive` in `install-fzf.js` shelled out to
+  `Expand-Archive`, whose `Microsoft.PowerShell.Archive` module fails to load on some
+  Windows hosts (`CouldNotAutoloadMatchingModule`) — breaking the `fzf` install and
+  the extraction test. It now invokes the **absolute-path** System32 bsdtar (handles
+  `.zip` natively, tolerates spaces, no shell, and — being absolute — not subject to
+  CWD binary-planting) and creates the destination directory first.
+
 ### Tests
 
 - Added `tests/test_fzf_path_resolution.js` — pins the invariant that
@@ -32,6 +40,9 @@ All notable changes to this project will be documented in this file.
   …), honors an absolute one, and never returns a bare/relative name (absolute
   path or throw). Runs against both `index.js` and `bundle/index.cjs` to guard
   against source/bundle parity drift.
+- `tests/test_extract_archive.js` now builds its fixture zip with System32 bsdtar
+  instead of PowerShell `Compress-Archive`, so it no longer depends on the flaky
+  `Microsoft.PowerShell.Archive` module.
 
 ## [1.2.0] - 2026-07-06
 

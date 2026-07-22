@@ -109,17 +109,14 @@ function extractArchive(archivePath, destDir, isZip) {
 
   try {
     if (isZip) {
-      // Windows: PowerShell Expand-Archive. Paths are passed via environment
-      // variables and read with $Env: + -LiteralPath, so nothing is interpolated
-      // into the command string — a path containing spaces, $(...) or backticks
-      // cannot break out or execute. execFileSync runs powershell.exe directly
-      // (no shell), and -NoProfile/-NonInteractive avoid profile side effects.
-      execFileSync(
-        'powershell',
-        ['-NoProfile', '-NonInteractive', '-Command',
-          'Expand-Archive -LiteralPath $Env:FZF_ARCHIVE -DestinationPath $Env:FZF_DEST -Force'],
-        { stdio: 'inherit', env: { ...process.env, FZF_ARCHIVE: archivePath, FZF_DEST: destDir } },
-      );
+      // Windows: extract with bsdtar (System32\tar.exe), resolved to an ABSOLUTE
+      // path so CreateProcess can't pick up a planted tar.exe from the CWD.
+      // bsdtar handles .zip natively and tolerates spaces (argv, no shell). This
+      // replaces PowerShell Expand-Archive, whose Microsoft.PowerShell.Archive
+      // module fails to load on some hosts (CouldNotAutoloadMatchingModule).
+      fs.mkdirSync(destDir, { recursive: true });
+      const tarExe = path.join(process.env.SystemRoot || 'C:\\Windows', 'System32', 'tar.exe');
+      execFileSync(tarExe, ['-x', '-f', archivePath, '-C', destDir], { stdio: 'inherit' });
     } else {
       // Unix: tar with argv array (no shell) — paths are literal arguments.
       execFileSync('tar', ['-xzf', archivePath, '-C', destDir], { stdio: 'inherit' });
