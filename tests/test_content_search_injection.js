@@ -153,7 +153,7 @@ test("buildContentSearchCommand: win32 passes query as its own argv element", ()
     // findstr must resolve to an ABSOLUTE path so CreateProcess can't run a
     // findstr.exe planted in the CWD (bare-name spawn searches the CWD first).
     assert.ok(
-      path.isAbsolute(cmd),
+      path.win32.isAbsolute(cmd),
       `win32 findstr must be an absolute path (CWD planting), got ${cmd}`
     );
     assert.match(cmd, /[\\/]findstr\.exe$/i, `must invoke findstr.exe, got ${cmd}`);
