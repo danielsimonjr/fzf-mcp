@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [1.3.0] - 2026-08-12
+
+> Rolls up two gaps: the companion-skill addition below (`1.2.0`, dated
+> 2026-07-06) was tagged in `.claude-plugin/plugin.json` and the marketplace
+> but never bumped in `package.json`, tagged in git, or published to npm —
+> pushed is not published. This release carries it forward together with the
+> security fixes below so `package.json`/the git tag/npm catch up to what the
+> plugin manifest already claimed.
+
 ### Added
 
 - **Windows CI leg.** CI ran on `ubuntu-latest` only — but Windows is the *production*

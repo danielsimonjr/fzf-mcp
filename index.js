@@ -215,7 +215,7 @@ function runSearchCommand(cmd, args) {
 const server = new Server(
   {
     name: "fzf-mcp",
-    version: "1.1.4",
+    version: "1.3.0",
   },
   {
     capabilities: {
