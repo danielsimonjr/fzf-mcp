@@ -45,3 +45,6 @@ __pycache__/
 
 # SDD scratch/ledger
 .superpowers/
+
+# Agent infrastructure, not project content (seeded by tracker-discipline-hook)
+.tracker-watch.json
