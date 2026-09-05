@@ -35524,7 +35524,7 @@ function runSearchCommand(cmd, args) {
 var server = new Server(
   {
     name: "fzf-mcp",
-    version: "1.3.0"
+    version: "2.0.0"
   },
   {
     capabilities: {

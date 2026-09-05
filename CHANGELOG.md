@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-09-05
+
 ### Changed
 
 - **Ported from `@modelcontextprotocol/sdk@1.x` to the MCP 2.0 packages**
