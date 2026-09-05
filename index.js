@@ -1,11 +1,7 @@
 #!/usr/bin/env node
 
-const { Server } = require("@modelcontextprotocol/sdk/server/index.js");
-const { StdioServerTransport } = require("@modelcontextprotocol/sdk/server/stdio.js");
-const {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} = require("@modelcontextprotocol/sdk/types.js");
+const { Server } = require("@modelcontextprotocol/server");
+const { serveStdio } = require("@modelcontextprotocol/server/stdio");
 const { spawn } = require("child_process");
 const path = require("path");
 const fs = require("fs");
@@ -227,7 +223,7 @@ const server = new Server(
 /**
  * List available tools
  */
-server.setRequestHandler(ListToolsRequestSchema, async () => {
+server.setRequestHandler("tools/list", async () => {
   return {
     tools: [
       {
@@ -342,7 +338,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 /**
  * Handle tool execution
  */
-server.setRequestHandler(CallToolRequestSchema, async (request) => {
+server.setRequestHandler("tools/call", async (request) => {
   const { name, arguments: args } = request.params;
 
   try {
@@ -515,8 +511,10 @@ async function main() {
   process.stdin.on("end", () => process.exit(0));
   process.stdin.on("close", () => process.exit(0));
 
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
+  await serveStdio(() => server, {
+    legacy: "serve",
+    onerror: (error) => process.stderr.write(`Fatal error: ${error}\n`),
+  });
   console.error("fzf MCP server running on stdio");
 }
 

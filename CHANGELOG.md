@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Ported from `@modelcontextprotocol/sdk@1.x` to the MCP 2.0 packages**
+  (`@modelcontextprotocol/server` + `@modelcontextprotocol/core` `^2.0.0`). Not an import
+  swap: handlers now register by spec method name (`setRequestHandler("tools/list", ...)`,
+  `setRequestHandler("tools/call", ...)`) instead of by schema object, which the v1 form
+  throws on under v2; and `serveStdio()` replaces `connect(new StdioServerTransport())` and
+  owns the transport lifecycle. Verified against the built plugin artifact
+  (`bundle/index.cjs`, regenerated with esbuild) over a real stdio handshake, not just a
+  passing test run: negotiates `2025-11-25` (the SDK's actual latest protocol version) and
+  `tools/list` returns all 3 tools. Wire protocol is unchanged before and after — this is a
+  dependency-generation change only.
+
 ### Fixed
 
 - **Auto-merged Dependabot commits could land on the default branch with no CI run.** The
