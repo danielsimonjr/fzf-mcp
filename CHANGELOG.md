@@ -4,6 +4,44 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Changed
+
+- **Migrated to TypeScript on Bun.** `index.js` and `install-fzf.js` become
+  `src/index.ts` and `src/install-fzf.ts`, compiled by `tsc` to `dist/`. TypeScript
+  7.0.2, Bun 1.4.2, Node >= 24. Output stays **CommonJS**: this package ships a
+  `.cjs` bundle and a postinstall step, and its security tests stub
+  `child_process.spawn` through the REQUIRE CACHE -- a technique ESM cannot
+  reproduce. Converting them would have deleted the coverage they exist for, so the
+  three test files stay CommonJS and now load from `dist/`.
+
+  The conversion was driven by `tsc --strict`, not a rewrite. Beyond annotations it
+  found: `proc.stdout` / `proc.stderr` used without the null check `spawn` requires,
+  a 301/302 redirect followed to `response.headers.location` without checking the
+  header exists, and seven `catch` sites reading `.message` off an `unknown` throw.
+
+### Added
+
+- **`scripts/bundle.mjs` -- `bundle/index.cjs` finally has a build.** It was a
+  committed artifact with NO reproducible build, so nothing could tell whether it
+  still matched the source. `esbuild` is pinned to an exact version (not a caret)
+  because the new CI gate compares bytes: two consecutive rebuilds were verified
+  byte-identical before the gate was added.
+
+- **A CI bundle-parity gate.** CI rebuilds the bundle and fails on a dirty tree, so a
+  stale committed bundle can no longer ship. This closes a gap that was on the
+  workspace tracker.
+
+- **`scripts/postinstall.mjs`.** `postinstall` runs BEFORE any build, so it cannot
+  point straight at `dist/install-fzf.js` -- that works for a published tarball and
+  breaks every fresh clone. The shim runs the compiled installer when present and
+  explains the skip when not.
+
+### Fixed
+
+- **CI no longer uses `--if-present` on every stage** (it succeeds silently when a
+  script is missing, so a rename produces a green run that checked nothing), and Bun
+  moves to 1.4.2 there.
+
 ## [2.0.0] - 2026-09-05
 
 ### Changed

@@ -1,17 +1,23 @@
 #!/usr/bin/env node
 
-const { Server } = require("@modelcontextprotocol/server");
-const { serveStdio } = require("@modelcontextprotocol/server/stdio");
-const { spawn } = require("child_process");
-const path = require("path");
-const fs = require("fs");
+import { Server, type Tool } from "@modelcontextprotocol/server";
+import { serveStdio } from "@modelcontextprotocol/server/stdio";
+import { spawn } from "child_process";
+import path from "path";
+import fs from "fs";
 
 // Resolve the fzf binary to an ABSOLUTE path. Never return a bare name:
 // spawn("fzf", ...) lets Windows CreateProcess search the current working
 // directory first, so an fzf.exe planted in the CWD could be executed (binary
 // planting / search-path hijack). Resolved lazily (at spawn time) so importing
 // this module never throws when fzf is absent — e.g. in unit tests.
-function resolveFzfPath() {
+/** Message text for anything thrown. A non-Error throw must not render as
+ * "undefined" -- that reports a failure while hiding what it was. */
+function errMessage(error: unknown): string {
+  return error instanceof Error ? errMessage(error) : String(error);
+}
+
+function resolveFzfPath(): string {
   // 1. Explicit override — must be absolute (a relative/bare value is plantable).
   const configured = process.env.FZF_PATH;
   if (configured) {
@@ -60,10 +66,10 @@ function resolveFzfPath() {
 /**
  * Recursively get all files in a directory using Node.js fs
  */
-async function getFileList(directory, maxDepth = 10) {
-  const files = [];
+async function getFileList(directory: string, maxDepth = 10): Promise<string> {
+  const files: string[] = [];
   
-  async function walk(dir, depth = 0) {
+  async function walk(dir: string, depth = 0): Promise<void> {
     if (depth > maxDepth) return;
     
     try {
@@ -90,7 +96,16 @@ async function getFileList(directory, maxDepth = 10) {
 /**
  * Execute fzf with the given arguments and input
  */
-function executeFzf(args, input = "") {
+/** Result of running a child process to completion. */
+interface ProcResult {
+  stdout: string;
+  stderr?: string;
+  code: number | null;
+  /** fzf exits 0 only when it matched something. */
+  hasMatches?: boolean;
+}
+
+function executeFzf(args: string[], input = ""): Promise<ProcResult> {
   return new Promise((resolve, reject) => {
     const process = spawn(resolveFzfPath(), args);
     let stdout = "";
@@ -153,7 +168,10 @@ function executeFzf(args, input = "") {
  * @param {string} platform - typically `process.platform`
  * @returns {{cmd: string, args: string[]}}
  */
-function buildContentSearchCommand(opts, platform) {
+function buildContentSearchCommand(
+  opts: Record<string, any>,
+  platform: string,
+): { cmd: string; args: string[] } {
   const {
     query,
     directory = ".",
@@ -176,9 +194,9 @@ function buildContentSearchCommand(opts, platform) {
   return { cmd: "grep", args };
 }
 
-function runSearchCommand(cmd, args) {
+function runSearchCommand(cmd: string, args: string[]): Promise<ProcResult> {
   return new Promise((resolve, reject) => {
-    let proc;
+    let proc: ReturnType<typeof spawn>;
     try {
       proc = spawn(cmd, args, { shell: false });
     } catch (err) {
@@ -188,12 +206,12 @@ function runSearchCommand(cmd, args) {
 
     let stdout = "";
 
-    proc.stdout.on("data", (data) => {
+    proc.stdout?.on("data", (data: Buffer) => {
       stdout += data.toString();
     });
 
     // Drain stderr so the child doesn't block on a full pipe; ignore content.
-    proc.stderr.on("data", () => {});
+    proc.stderr?.on("data", () => {});
 
     proc.on("close", (code) => {
       resolve({ stdout, code });
@@ -224,8 +242,11 @@ const server = new Server(
  * List available tools
  */
 server.setRequestHandler("tools/list", async () => {
-  return {
-    tools: [
+  // Annotated as Tool[] rather than left to inference: the three tools have
+  // different inputSchema shapes, so TypeScript infers a UNION that does not match
+  // what the SDK expects. Naming the type also means a malformed schema fails here
+  // instead of at a client.
+  const tools: Tool[] = [
       {
         name: "fuzzy_search_files",
         description:
@@ -331,15 +352,20 @@ server.setRequestHandler("tools/list", async () => {
           required: ["query"],
         },
       },
-    ],
-  };
+  ];
+  return { tools };
 });
 
 /**
  * Handle tool execution
  */
 server.setRequestHandler("tools/call", async (request) => {
-  const { name, arguments: args } = request.params;
+  const { name } = request.params;
+  // The SDK types tool arguments as `{ [x: string]: unknown } | undefined`, which is
+  // honest: they arrive as JSON from a client and nothing has validated them yet.
+  // Each branch below destructures the fields its own inputSchema declares, so this
+  // one cast is where "unvalidated JSON" becomes "the shape this tool documents".
+  const args = (request.params.arguments ?? {}) as Record<string, any>;
 
   try {
     if (name === "fuzzy_search_files") {
@@ -375,7 +401,7 @@ server.setRequestHandler("tools/call", async (request) => {
       const result = await executeFzf(fzfArgs, fileList);
 
       // Limit results
-      const lines = result.stdout.split('\n').filter(line => line.trim());
+      const lines = result.stdout.split('\n').filter((line: string) => line.trim());
       const limitedResults = lines.slice(0, maxResults);
 
       return {
@@ -410,7 +436,7 @@ server.setRequestHandler("tools/call", async (request) => {
       const result = await executeFzf(fzfArgs, input);
 
       // Limit results
-      const lines = result.stdout.split('\n').filter(line => line.trim());
+      const lines = result.stdout.split('\n').filter((line: string) => line.trim());
       const limitedResults = lines.slice(0, maxResults);
 
       return {
@@ -452,7 +478,7 @@ server.setRequestHandler("tools/call", async (request) => {
           const result = await executeFzf(fzfArgs, stdout);
 
           // Limit results
-          const lines = result.stdout.split('\n').filter(line => line.trim());
+          const lines = result.stdout.split('\n').filter((line: string) => line.trim());
           const limitedResults = lines.slice(0, maxResults);
 
           return {
@@ -493,7 +519,7 @@ server.setRequestHandler("tools/call", async (request) => {
       content: [
         {
           type: "text",
-          text: `Error: ${error.message}`,
+          text: `Error: ${errMessage(error)}`,
         },
       ],
       isError: true,
@@ -530,9 +556,4 @@ if (require.main === module) {
 
 // Test-only export surface. Keep this minimal — production callers use the
 // MCP stdio protocol, not these direct refs.
-module.exports = {
-  server,
-  runSearchCommand,
-  buildContentSearchCommand,
-  resolveFzfPath,
-};
+export { server, runSearchCommand, buildContentSearchCommand, resolveFzfPath };

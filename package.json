@@ -2,20 +2,25 @@
   "name": "@danielsimonjr/fzf-mcp",
   "version": "2.0.0",
   "description": "MCP server for fzf fuzzy finder (self-contained with bundled fzf binary)",
-  "main": "index.js",
+  "main": "dist/index.js",
   "bin": {
-    "fzf-mcp": "./index.js"
+    "fzf-mcp": "dist/index.js"
   },
   "files": [
-    "index.js",
-    "install-fzf.js",
-    "bin/",
+    "dist",
+    "scripts/postinstall.mjs",
+    "bin",
+    "bundle",
     "README.md",
     "LICENSE"
   ],
   "scripts": {
-    "postinstall": "node install-fzf.js",
-    "test": "node --test tests/*.js"
+    "postinstall": "node scripts/postinstall.mjs",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "bun run build && bun run bundle && node --test tests/*.js",
+    "bundle": "node scripts/bundle.mjs",
+    "prepublishOnly": "bun run build"
   },
   "keywords": [
     "mcp",
@@ -39,5 +44,15 @@
     "type": "git",
     "url": "https://github.com/danielsimonjr/fzf-mcp.git"
   },
-  "homepage": "https://github.com/danielsimonjr/fzf-mcp"
+  "homepage": "https://github.com/danielsimonjr/fzf-mcp",
+  "packageManager": "bun@1.4.2",
+  "engines": {
+    "bun": ">=1.4.2",
+    "node": ">=24"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "@types/node": "26.4.1",
+    "esbuild": "0.28.2"
+  }
 }

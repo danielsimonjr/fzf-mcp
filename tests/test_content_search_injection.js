@@ -38,7 +38,7 @@ Module._load = function (request, parent, ...rest) {
   return realLoad.call(this, request, parent, ...rest);
 };
 
-const { buildContentSearchCommand, runSearchCommand } = require("../index.js");
+const { buildContentSearchCommand, runSearchCommand } = require("../dist/index.js");
 
 // Restore the loader so unrelated requires aren't shadowed during teardown.
 Module._load = realLoad;

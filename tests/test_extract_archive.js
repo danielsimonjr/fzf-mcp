@@ -14,7 +14,7 @@ const os = require("node:os");
 const path = require("node:path");
 const { execFileSync } = require("node:child_process");
 
-const { extractArchive } = require("../install-fzf.js");
+const { extractArchive } = require("../dist/install-fzf.js");
 
 const isWin = process.platform === "win32";
 

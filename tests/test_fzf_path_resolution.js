@@ -21,7 +21,7 @@ const path = require("node:path");
 // what .mcp.json launches, so its resolver must hold the same invariant; running
 // the suite over both guards against source/bundle parity drift.
 const MODULES = [
-  ["index.js", require("../index.js")],
+  ["index.js", require("../dist/index.js")],
   ["bundle/index.cjs", require("../bundle/index.cjs")],
 ];
 

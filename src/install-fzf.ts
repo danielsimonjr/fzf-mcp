@@ -1,12 +1,12 @@
 #!/usr/bin/env node
 
-const https = require('https');
-const http = require('http');
-const fs = require('fs');
-const path = require('path');
-const { execFileSync } = require('child_process');
-const { promisify } = require('util');
-const stream = require('stream');
+import https from "https";
+import http from "http";
+import fs from "fs";
+import path from "path";
+import { execFileSync } from "child_process";
+import { promisify } from "util";
+import stream from "stream";
 const pipeline = promisify(stream.pipeline);
 
 const FZF_VERSION = '0.58.0'; // Stable version with good release assets
@@ -65,8 +65,13 @@ function getDownloadInfo() {
 }
 
 // Download file
-async function downloadFile(url, destPath) {
-  return new Promise((resolve, reject) => {
+/** Message text for anything thrown, so a non-Error does not print "undefined". */
+function errMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
+async function downloadFile(url: string, destPath: string): Promise<void> {
+  return new Promise<void>((resolve, reject) => {
     console.log(`Downloading fzf from ${url}...`);
 
     const protocol = url.startsWith('https') ? https : http;
@@ -74,7 +79,14 @@ async function downloadFile(url, destPath) {
     protocol.get(url, (response) => {
       // Handle redirects
       if (response.statusCode === 302 || response.statusCode === 301) {
-        downloadFile(response.headers.location, destPath)
+        const location = response.headers.location;
+        // A 301/302 without a Location header is a malformed response. Following
+        // `undefined` would throw somewhere further away from the cause.
+        if (!location) {
+          reject(new Error(`Redirect ${response.statusCode} with no Location header`));
+          return;
+        }
+        downloadFile(location, destPath)
           .then(resolve)
           .catch(reject);
         return;
@@ -104,7 +116,7 @@ async function downloadFile(url, destPath) {
 }
 
 // Extract archive
-function extractArchive(archivePath, destDir, isZip) {
+function extractArchive(archivePath: string, destDir: string, isZip: boolean): void {
   console.log(`Extracting ${archivePath}...`);
 
   try {
@@ -123,18 +135,18 @@ function extractArchive(archivePath, destDir, isZip) {
     }
     console.log('Extraction complete');
   } catch (error) {
-    throw new Error(`Failed to extract archive: ${error.message}`);
+    throw new Error(`Failed to extract archive: ${errMessage(error)}`);
   }
 }
 
 // Make file executable (Unix only)
-function makeExecutable(filePath) {
+function makeExecutable(filePath: string): void {
   if (process.platform !== 'win32') {
     try {
       fs.chmodSync(filePath, 0o755);
       console.log(`Made ${filePath} executable`);
     } catch (error) {
-      console.warn(`Warning: Could not make ${filePath} executable: ${error.message}`);
+      console.warn(`Warning: Could not make ${filePath} executable: ${errMessage(error)}`);
     }
   }
 }
@@ -185,7 +197,7 @@ async function install() {
     console.log(`Binary location: ${binaryPath}`);
 
   } catch (error) {
-    console.error('Failed to install fzf:', error.message);
+    console.error('Failed to install fzf:', errMessage(error));
     console.error('\nYou can manually install fzf using:');
     console.error('  Windows: winget install fzf');
     console.error('  macOS:   brew install fzf');
@@ -202,4 +214,4 @@ if (require.main === module) {
   install();
 }
 
-module.exports = { extractArchive, getDownloadInfo };
+export { extractArchive, getDownloadInfo };
