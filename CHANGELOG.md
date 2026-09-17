@@ -6,6 +6,19 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **The plugin now lives in `plugin/`, and it registers its MCP server.** The
+  marketplace entry installed the whole repo root. The root has `package.json` and
+  `bun.lock`, so Claude Code ran a dependency install and the 2.0.0 cache held 14 MB of
+  `node_modules` (20 MB total). The root also had no `.mcp.json` (it was gitignored),
+  so the installed plugin started NO server; only its skill loaded. `plugin/` now holds
+  `.claude-plugin/plugin.json`, a committed `.mcp.json`, `bundle/` and `skills/` only.
+  The marketplace entry must use `git-subdir` with `path: "plugin"`. `plugin/.mcp.json`
+  sets no `FZF_PATH`, so the bundled `fzf.exe` is used. Verified from a copy of
+  `plugin/` with every non-built-in `require` denied: `initialize`, `tools/list`
+  (3 tools) and a `fuzzy_filter` call all succeed. Version 2.1.0.
+
+### Changed
+
 - **Migrated to TypeScript on Bun.** `index.js` and `install-fzf.js` become
   `src/index.ts` and `src/install-fzf.ts`, compiled by `tsc` to `dist/`. TypeScript
   7.0.2, Bun 1.4.2, Node >= 24. Output stays **CommonJS**: this package ships a

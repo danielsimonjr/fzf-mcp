@@ -1,6 +1,6 @@
 {
   "name": "@danielsimonjr/fzf-mcp",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "description": "MCP server for fzf fuzzy finder (self-contained with bundled fzf binary)",
   "main": "dist/index.js",
   "bin": {
@@ -10,7 +10,7 @@
     "dist",
     "scripts/postinstall.mjs",
     "bin",
-    "bundle",
+    "plugin",
     "README.md",
     "LICENSE"
   ],

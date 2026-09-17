@@ -5,10 +5,7 @@
       "command": "node",
       "args": [
         "${CLAUDE_PLUGIN_ROOT}/bundle/index.cjs"
-      ],
-      "env": {
-        "FZF_PATH": "C:\\Program Files\\fzf\\fzf.exe"
-      }
+      ]
     }
   }
 }

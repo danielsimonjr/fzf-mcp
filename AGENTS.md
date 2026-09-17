@@ -12,20 +12,20 @@ fuzzy finder plus `findstr`/`grep` for content search. Tools: `fuzzy_search_file
 
 ## The things that bite
 
-1. **Two copies of the code — edit both.**
-   - `index.js` — source (`package.json main`/`bin`).
-   - `bundle/index.cjs` — the **built** bundle that `.mcp.json` launches
-     (`${CLAUDE_PLUGIN_ROOT}/bundle/index.cjs`).
-   - **No build script** (`package.json scripts` has only `postinstall`/`test`), so the
-     bundle is **not regenerated** — hand-port any `index.js` change into
-     `bundle/index.cjs` and keep them in sync. The bundle uses `__require`, so
-     `require("fs")`/`require("path")` work inside it. `tests/test_fzf_path_resolution.js`
-     runs against **both** modules to catch parity drift.
+1. **The plugin is `plugin/`, not the repo root.** The marketplace installs only
+   `plugin/` (a `git-subdir` source). That directory holds `.claude-plugin/plugin.json`,
+   `.mcp.json`, `bundle/` and `skills/`, and no `package.json` or lockfile. Claude Code
+   therefore runs no `npm ci`/`bun install` and the install has no `node_modules`.
+   - `src/*.ts` is the source; `bun run bundle` writes `plugin/bundle/index.cjs`.
+     Commit the rebuilt bundle; CI fails when the committed bundle is stale.
+   - The bundle requires Node built-ins only. Keep it so: a runtime dependency that
+     esbuild cannot inline breaks the installed plugin.
+   - Change the version in `package.json`, `plugin/.claude-plugin/plugin.json`, the
+     server version in `src/index.ts`, and the marketplace entry together.
 
-2. **The running server is NOT this repo (maintainer's machine).**
-   Claude Code loads a separate copy at
-   `%USERPROFILE%\servers\src\fzf-mcp\index.js` via `.claude.json`. Repo commits do
-   not change the running server until redeployed to `servers\src`. See `TODO.md`.
+2. **The running server is the plugin cache copy**
+   (`~/.claude/plugins/cache/local-marketplace/fzf-mcp/<version>/`). Repo commits do not
+   change it until the marketplace entry is updated and the plugin is reinstalled.
 
 3. **CRLF churn — normalize to LF before staging.** (`.gitattributes` now enforces LF,
    but existing working-tree flips may linger.) Before staging an edited file:
@@ -50,10 +50,9 @@ fuzzy finder plus `findstr`/`grep` for content search. Tools: `fuzzy_search_file
 
 ## Config
 
-- Set `FZF_PATH` (absolute path to the fzf executable) in the MCP config `env` block —
-  `.mcp.json` (local) or `.claude.json` (maintainer's runtime).
-- `.mcp.json` is **gitignored** (local machine config). `.mcp.json.example` is the
-  committed template.
+- `plugin/.mcp.json` is committed and sets no `FZF_PATH`: the server uses the bundled
+  `plugin/bundle/bin/fzf.exe`. Set an absolute `FZF_PATH` in an `env` block only to
+  override it. A root `.mcp.json` stays gitignored (local machine config).
 
 ## Testing & git
 
@@ -65,7 +64,6 @@ fuzzy finder plus `findstr`/`grep` for content search. Tools: `fuzzy_search_file
 ## Sanity checks before commit
 
 ```bash
-node --check index.js && node --check bundle/index.cjs
-node --test tests/*.js            # expect all green
+bun run typecheck && bun run test   # builds, bundles, runs node --test
 git diff --cached | grep -i "$USERNAME" || echo "no personal path staged"
 ```

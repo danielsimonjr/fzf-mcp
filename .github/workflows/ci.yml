@@ -48,14 +48,14 @@ jobs:
       - run: bun run typecheck
       - run: bun run test
 
-      # BUNDLE PARITY. bundle/index.cjs is a COMMITTED artifact that the Claude Code
+      # BUNDLE PARITY. plugin/bundle/index.cjs is a COMMITTED artifact that the Claude Code
       # plugin runs directly. It had no build script at all until this migration, so
       # nothing could tell whether it still matched src/. Rebuilding and checking for
       # a dirty tree makes a stale bundle fail CI instead of shipping.
       - name: Committed bundle matches src/
         run: |
           bun run bundle
-          git diff --exit-code -- bundle/index.cjs || {
-            echo "::error::bundle/index.cjs is stale — run 'bun run bundle' and commit it";
+          git diff --exit-code -- plugin/bundle/index.cjs || {
+            echo "::error::plugin/bundle/index.cjs is stale — run 'bun run bundle' and commit it";
             exit 1;
           }

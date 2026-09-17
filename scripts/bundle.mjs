@@ -17,7 +17,7 @@ const pkg = require("../package.json");
 
 await build({
   entryPoints: ["src/index.ts"],
-  outfile: "bundle/index.cjs",
+  outfile: "plugin/bundle/index.cjs",
   bundle: true,
   platform: "node",
   target: "node24",
@@ -33,4 +33,4 @@ await build({
   legalComments: "none",
 });
 
-console.log(`bundled src/index.ts -> bundle/index.cjs (v${pkg.version})`);
+console.log(`bundled src/index.ts -> plugin/bundle/index.cjs (v${pkg.version})`);

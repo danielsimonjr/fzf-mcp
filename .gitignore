@@ -35,6 +35,8 @@ Thumbs.db
 # Claude Code settings (local only)
 .claude/
 .mcp.json
+# The plugin launch config IS committed: the marketplace installs plugin/ only.
+!plugin/.mcp.json
 # Added by post-migration audit (2026-05-01)
 dist/
 build/

@@ -17,12 +17,12 @@ const test = require("node:test");
 const assert = require("node:assert/strict");
 const path = require("node:path");
 
-// Exercise BOTH the source and the hand-mirrored bundle. bundle/index.cjs is
+// Exercise BOTH the source and the hand-mirrored bundle. plugin/bundle/index.cjs is
 // what .mcp.json launches, so its resolver must hold the same invariant; running
 // the suite over both guards against source/bundle parity drift.
 const MODULES = [
   ["index.js", require("../dist/index.js")],
-  ["bundle/index.cjs", require("../bundle/index.cjs")],
+  ["plugin/bundle/index.cjs", require("../plugin/bundle/index.cjs")],
 ];
 
 function withEnv(value, fn) {

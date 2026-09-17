@@ -40,7 +40,7 @@ git clone https://github.com/danielsimonjr/fzf-mcp.git
 cd fzf-mcp
 bun install
 bun run build     # the server is TypeScript; it compiles to dist/
-bun run bundle    # regenerate the committed bundle/index.cjs the plugin runs
+bun run bundle    # regenerate the committed plugin/bundle/index.cjs the plugin runs
 ```
 
 Bun is the development toolchain; Node is the runtime the server ships on. The fzf
