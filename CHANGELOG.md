@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-09-23
+
 ### Changed
 
 - **The plugin now lives in `plugin/`, and it registers its MCP server.** The
