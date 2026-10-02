@@ -1,0 +1,42 @@
+name: Bot-push probe
+
+# Temporary probe on a throwaway branch. It measures what GitHub does with a GITHUB_TOKEN
+# push to a same-repo PR branch, with and without "[skip ci]" in the commit message.
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  probe:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bot push
+        env:
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          set -euo pipefail
+          msg='probe: bot commit'
+          case "$TITLE" in *SKIPCI*) msg="$msg [skip ci]" ;; esac
+          date -u > .probe-bot-push.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .probe-bot-push.txt
+          git commit -m "$msg"
+          git push origin "HEAD:${{ github.head_ref }}"
+
+      - name: Dispatch CI on the bot commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+        run: gh workflow run ci.yml --ref "${{ github.head_ref }}"
