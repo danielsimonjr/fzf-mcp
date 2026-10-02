@@ -1,0 +1,53 @@
+name: Bot-push probe
+
+# Temporary probe on a throwaway branch. It measures whether a workflow's GITHUB_TOKEN may approve
+# the pull_request runs that GitHub holds after that workflow pushes to a same-repo PR branch.
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  probe:
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - uses: actions/checkout@08eba0b27e820071cde6df949e0beb9ba4906955 # v4.3.0
+        with:
+          ref: ${{ github.head_ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Bot push
+        id: push
+        env:
+          HEAD_REF: ${{ github.head_ref }}
+        run: |
+          set -euo pipefail
+          date -u > .probe-bot-push.txt
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add .probe-bot-push.txt
+          git commit -m 'probe: bot commit'
+          git push origin "HEAD:$HEAD_REF"
+          echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Approve the held runs on the bot commit
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          SHA: ${{ steps.push.outputs.sha }}
+        run: |
+          set -euo pipefail
+          for i in $(seq 1 12); do
+            ids=$(gh api "repos/$GH_REPO/actions/runs?head_sha=$SHA&status=action_required" --jq '.workflow_runs[].id')
+            [ -n "$ids" ] && break
+            sleep 5
+          done
+          echo "held: ${ids:-none}"
+          for id in $ids; do
+            gh api -X POST "repos/$GH_REPO/actions/runs/$id/approve" && echo "approved $id" || echo "approve FAILED $id"
+          done
